@@ -1,0 +1,38 @@
+# Environment Variables - NEVER COMMIT THESE
+.env
+.env.local
+.env.production
+
+# Database credentials and secrets
+config.php
+secrets.php
+*.secret
+
+# Backup files
+backup-original/
+*.backup
+*.bak
+
+# Do not upload folders
+_Do-Not-Upload/
+dont upload/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp

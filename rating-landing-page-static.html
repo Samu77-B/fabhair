@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You for Your Rating!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #81b29a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        .success-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+        
+        .rating-display {
+            margin: 30px 0;
+        }
+        
+        .stars {
+            font-size: 40px;
+            color: #FFD700;
+            letter-spacing: 5px;
+        }
+        
+        .rating-text {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .message {
+            color: #666;
+            line-height: 1.6;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #81b29a;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        .button:hover {
+            background: #6a9980;
+        }
+        
+        .error {
+            color: #e74c3c;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Success Message -->
+        <div id="success-message">
+            <div class="success-icon">✓</div>
+            <h1>Thank You!</h1>
+            <div class="rating-display">
+                <div class="stars" id="display-stars"></div>
+                <div class="rating-text" id="rating-text"></div>
+            </div>
+            <p class="message" id="rating-message"></p>
+            <a href="/" class="button">Return to Homepage</a>
+        </div>
+    </div>
+
+    <script>
+        // Get rating from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const rating = parseInt(urlParams.get('rating'));
+        const token = urlParams.get('token');
+        
+        // Star character
+        const star = '★';
+        const emptyStar = '☆';
+        
+        // Rating messages
+        const ratingMessages = {
+            1: "We're sorry to hear that. We'd love to make it right!",
+            2: "Thank you for your feedback. We're working to improve!",
+            3: "Thank you! We appreciate your feedback.",
+            4: "Thank you! We're glad you had a good experience!",
+            5: "Thank you! We're thrilled you loved it!"
+        };
+        
+        // Display stars based on rating
+        function displayStars(rating) {
+            let starsHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                starsHTML += i <= rating ? star : emptyStar;
+            }
+            return starsHTML;
+        }
+        
+        // Process the rating
+        function processRating() {
+            if (!rating || rating < 1 || rating > 5) {
+                document.getElementById('success-message').innerHTML = `
+                    <div class="success-icon" style="color: #e74c3c;">✗</div>
+                    <h1>Oops!</h1>
+                    <p class="message error">Invalid rating. Please try again.</p>
+                    <a href="/" class="button">Return to Homepage</a>
+                `;
+                return;
+            }
+            
+            // Show the rating
+            document.getElementById('display-stars').innerHTML = displayStars(rating);
+            document.getElementById('rating-text').textContent = `You rated us ${rating} out of 5 stars`;
+            document.getElementById('rating-message').textContent = ratingMessages[rating];
+            
+            // OPTION 1: Send to a third-party service (Formspree, Google Forms, etc.)
+            // Uncomment and configure one of these options:
+            
+            /*
+            // Formspree example (free tier available)
+            fetch('https://formspree.io/f/YOUR_FORM_ID', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rating: rating,
+                    token: token,
+                    timestamp: new Date().toISOString()
+                })
+            }).catch(err => console.log('Rating logged:', {rating, token}));
+            */
+            
+            /*
+            // Google Sheets via Google Apps Script
+            fetch('YOUR_GOOGLE_APPS_SCRIPT_URL', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({rating, token})
+            }).catch(err => console.log('Rating logged:', {rating, token}));
+            */
+            
+            /*
+            // Send to your email via EmailJS (free tier available)
+            emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+                rating: rating,
+                token: token,
+                message: ratingMessages[rating]
+            }).catch(err => console.log('Rating logged:', {rating, token}));
+            */
+            
+            // OPTION 2: Store in localStorage (for testing/development only)
+            // This won't persist across devices, but useful for testing
+            const ratings = JSON.parse(localStorage.getItem('ratings') || '[]');
+            ratings.push({
+                rating: rating,
+                token: token,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('ratings', JSON.stringify(ratings));
+            
+            // OPTION 3: Log to console (for development)
+            console.log('Rating received:', { rating, token, timestamp: new Date() });
+        }
+        
+        // Process on page load
+        window.addEventListener('DOMContentLoaded', processRating);
+    </script>
+</body>
+</html>

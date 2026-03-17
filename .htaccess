@@ -1,0 +1,128 @@
+# ========================================
+# ENHANCED SECURITY .HTACCESS
+# Fab Hair London - Website Security
+# ========================================
+
+# 1. STOP CROSS-SITE CONTAMINATION (The "Jumping" Fix)
+# This prevents a script in Site A from using a "Symlink" to read Site B.
+Options -FollowSymLinks
+Options +SymLinksIfOwnerMatch
+
+# 2. DISABLE DIRECTORY BROWSING
+# Prevents hackers from seeing your file structure (e.g., your /inc or /config folders).
+Options -Indexes
+
+# 2a. SET INDEX FILES (ensure index.html and index.php can be accessed)
+DirectoryIndex index.html index.php index.htm
+
+# 3. DISABLE SERVER SIGNATURE (Hides server version info from attackers)
+ServerSignature Off
+
+# 4. PROTECT YOUR CORE CONFIG FILES
+# Block access to sensitive configuration and system files
+<FilesMatch "^(\.htaccess|\.htpasswd|config\.php|php\.ini|error_log|\.env|\.git|\.gitignore|\.gitattributes)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 5. PROTECT SQL AND SENSITIVE FILES
+# Block access to SQL files, database dumps, and documentation files
+<FilesMatch "\.(sql|md|txt|bak|backup|old|orig|save|swp|tmp)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 6. BLOCK MALICIOUS SCRIPT INJECTIONS (Common JS Skimmer & XSS Patterns)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block script injection attempts in query strings (check malicious patterns first)
+    RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} \.\./\.\./\.\./\.\./ [OR]
+    RewriteCond %{QUERY_STRING} boot\.ini [OR]
+    RewriteCond %{QUERY_STRING} tag\=.*%3C [OR]
+    RewriteCond %{QUERY_STRING} eval\( [OR]
+    RewriteCond %{QUERY_STRING} expression\( [OR]
+    RewriteCond %{QUERY_STRING} javascript: [OR]
+    RewriteCond %{QUERY_STRING} base64_encode [OR]
+    RewriteCond %{QUERY_STRING} proc/self/environ [OR]
+    RewriteCond %{QUERY_STRING} mosConfig_ [OR]
+    RewriteCond %{QUERY_STRING} \/etc\/passwd [OR]
+    RewriteCond %{QUERY_STRING} \/etc\/hosts [OR]
+    RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} union.*select.*\( [OR]
+    RewriteCond %{QUERY_STRING} union.*all.*select.* [OR]
+    RewriteCond %{QUERY_STRING} concat\( [OR]
+    RewriteCond %{QUERY_STRING} \%(22|27|3C|3E|5C) [OR]
+    RewriteCond %{QUERY_STRING} \.\./\.\./\.\./\.\./\.\./ [OR]
+    RewriteCond %{QUERY_STRING} (\<|%3C).*iframe.*(\>|%3E) [NC]
+    RewriteRule ^(.*)$ - [F,L]
+
+    # Allow existing files and directories to pass through (including index.html)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+</IfModule>
+
+# 7. BLOCK MALICIOUS USER AGENTS (but allow legitimate bots)
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{HTTP_USER_AGENT} ^$ [OR]
+    RewriteCond %{HTTP_USER_AGENT} ^(-|\.|') [OR]
+    RewriteCond %{HTTP_USER_AGENT} (libwww|wget|nikto|scan|clshttp|loader|hack|exploit|sqlmap|nmap) [NC,OR]
+    RewriteCond %{HTTP_USER_AGENT} (;|<|>|'|%0A|%0D|%27|%3C|%3E|%00) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# 8. PREVENT ACCESS TO HIDDEN FILES (dotfiles)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 9. SECURITY HEADERS (if mod_headers is available)
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    # Enable XSS filtering
+    Header always set X-XSS-Protection "1; mode=block"
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# 10. LIMIT REQUEST METHODS (only allow GET, POST, HEAD)
+<LimitExcept GET POST HEAD>
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</LimitExcept>
+
+# 11. DISABLE PHP EXECUTION IN UPLOAD DIRECTORIES (if any exist)
+# Add specific directories here if needed
+# <DirectoryMatch "^/.*/(uploads|temp|tmp)/">
+#     php_flag engine off
+# </DirectoryMatch>
